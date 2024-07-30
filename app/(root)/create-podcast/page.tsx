@@ -1,5 +1,7 @@
 "use client";
 
+import GeneratePodcast from "@/components/GeneratePodcast";
+import GenerateThumbnail from "@/components/GenerateThumbnail";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -26,24 +28,37 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
+import { Loader } from "lucide-react";
+import { Id } from "@/convex/_generated/dataModel";
 
-const voiceCategories = ['alloy', 'shimer', 'nova', 'echo', 'fable', 'onyx']
+const voiceCategories = ["alloy", "shimer", "nova", "echo", "fable", "onyx"];
 
 const formSchema = z.object({
-  username: z.string().min(2, {
-    message: "Username must be at least 2 characters.",
-  }),
+  podcastTitle: z.string().min(2),
+  podcastDescription: z.string().min(2),
 });
 
 const CreatePodcast = () => {
+  
+  const [imagePrompt, setimagePrompt] = useState('');
+  const [imageStorageId, setImageStorageId] = useState<Id<"_storage"> | null>(null);
+  const [imageUrl, setImageUrl] = useState('');
+  
+  const [audioUrl, setAudioUrl] = useState('');
+  const [audioStorageId, setAudioStorageId] = useState<Id<"_storage"> | null>(null);
+  const [audioDuration, setAudioDuration] = useState(0)
+  
+  const [voicePropmt, setVoicePrompt] = useState('');
   const [voiceType, setVoiceType] = useState<string | null>(null);
-
-
+  
+  
+  const [isSubmitting, setisSubmitting] = useState(false);
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      podcastTitle: "",
+      podcastDescription: "",
     },
   });
 
@@ -70,11 +85,11 @@ const CreatePodcast = () => {
               render={({ field }) => (
                 <FormItem className="flex flex-col gap-2.5">
                   <FormLabel className="text-16 font-bold text-white-1">
-                    Username
+                    Title
                   </FormLabel>
                   <FormControl>
                     <Input
-                      className="input-class focus-visible:ring-orange-1"
+                      className="input-class focus-visible:ring-offset-orange-1"
                       placeholder="JSM Pro Podcast"
                       {...field}
                     />
@@ -92,12 +107,23 @@ const CreatePodcast = () => {
               </Label>
 
               <Select onvalueChange={(value) => setVoiceType(value)}>
-                <SelectTrigger className={cn("text-16 w-full border-none bg-black-1 text-gray-1")}>
-                  <SelectValue placeholder="Select AI Voice" className="placeholder:text-gray-1"/>
+                <SelectTrigger
+                  className={cn(
+                    "text-16 w-full border-none bg-black-1 text-gray-1 focus-visible:ring-offset-orange-1"
+                  )}
+                >
+                  <SelectValue
+                    placeholder="Select AI Voice"
+                    className="placeholder:text-gray-1"
+                  />
                 </SelectTrigger>
-                <SelectContent className="text-16 border-none bg-black-1 font-bold text-white-1 focus:ring-orange-1">
+                <SelectContent className="text-16 border-none bg-black-1 font-bold text-white-1 focus-visible:ring-offset-orange-1">
                   {voiceCategories.map((category) => (
-                    <SelectItem key={category} value={category} className="capitalize focus:bg-orange-1">
+                    <SelectItem
+                      key={category}
+                      value={category}
+                      className="capitalize focus:bg-orange-1"
+                    >
                       {category}
                     </SelectItem>
                   ))}
@@ -122,7 +148,7 @@ const CreatePodcast = () => {
                   </FormLabel>
                   <FormControl>
                     <Textarea
-                      className="input-class focus-visible:ring-orange-1"
+                      className="input-class focus-visible:ring-offset-orange-1"
                       placeholder="Write a short podcast description"
                       {...field}
                     />
@@ -134,6 +160,32 @@ const CreatePodcast = () => {
                 </FormItem>
               )}
             />
+          </div>
+          <div className="flex flex-col pt-10">
+            <GeneratePodcast 
+              setAudioStorageId={setAudioStorageId}
+              setAudio={setAudioUrl}
+              voiceType={voiceType}
+              audio={audioUrl}
+              voicePropmt={voicePropmt}
+              setVoicePrompt={setVoicePrompt}
+              setAudioDuration={setAudioDuration}
+            />
+            <GenerateThumbnail />
+
+            <div className="mt-10 w-full">
+              <Button
+                type="submit"
+                className="text-16 w-full bg-orange-1 py-4 font-extrabold text-white-1 transition-all duration-500 hover:bg-black-1"
+              >
+                {isSubmitting ? (
+                <>
+                  Submitting
+                  <Loader size={20} className="animate-spin ml-2" />
+                </>
+              ) : ("Submit & Publish Podcast")}
+              </Button>
+            </div>
           </div>
         </form>
       </Form>
